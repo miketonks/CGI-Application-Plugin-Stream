@@ -14,6 +14,9 @@ use vars (qw/@ISA @EXPORT_OK/);
 
 our $VERSION = '2.10';
 
+my $TEST_DEBUG = 1;
+my $TEST_GO_SLOW = 1;
+
 sub stream_file {
     my ( $self, $file_or_fh, $bytes ) = @_;
     $bytes ||= 1024;
@@ -84,7 +87,8 @@ sub stream_file {
 	    $self->psgi_streaming_callback(sub {
 	       my $writer = shift;
            while ( read( $fh, my $buffer, $bytes ) ) {
-	           #sleep 1;
+	           sleep 1 if $TEST_GO_SLOW;
+			   warn "callback loop [$bytes]" if $TEST_DEBUG;
 	           $writer->write($buffer);
 			}
 		});
