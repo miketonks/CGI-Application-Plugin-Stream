@@ -28,7 +28,7 @@ sub stream_file {
         # Now let's go binmode (Thanks, William!)
         binmode $fh;
         $basename = basename( $file_or_fh );
-    } 
+    }
     # We have a file handle.
     else {
         $fh = $file_or_fh;
@@ -40,8 +40,8 @@ sub stream_file {
     require FileHandle;
     bless $fh,  "FileHandle";
 
-    # Check what headers the user has already set and 
-    # don't override them. 
+    # Check what headers the user has already set and
+    # don't override them.
     my %existing_headers = $self->header_props();
 
     # Check for a existing type header set with or without a hypheout a hyphen
@@ -50,11 +50,11 @@ sub stream_file {
 
         eval {
             require File::MMagic;
-            my $magic = File::MMagic->new(); 
+            my $magic = File::MMagic->new();
             $mime_type = $magic->checktype_filehandle($fh);
         };
         warn "Failed to load File::MMagic module to determine mime type: $@" if $@;
-        
+
         # Set Default
         $mime_type ||= 'application/octet-stream';
 
@@ -62,8 +62,8 @@ sub stream_file {
     }
 
 
-    unless ( $existing_headers{'Content_Length'} 
-        ||   $existing_headers{'-Content_Length'} 
+    unless ( $existing_headers{'Content_Length'}
+        ||   $existing_headers{'-Content_Length'}
         ) {
         $self->header_add('-Content_Length' => $size);
     }
@@ -75,15 +75,28 @@ sub stream_file {
         $self->header_add('-attachment' => $basename);
     }
 
+    # This reads in the file in $byte size chunks
+    # File::MMagic may have read some of the file, so seek back to the beginning
+    seek($fh,0,0);
+
+	if ($self->{__IS_PSGI}) {
+
+	    $self->psgi_streaming_callback(sub {
+	       my $writer = shift;
+           while ( read( $fh, my $buffer, $bytes ) ) {
+	           #sleep 1;
+	           $writer->write($buffer);
+			}
+		});
+		return undef;
+	}
+
     unless ( $ENV{'CGI_APP_RETURN_ONLY'} ) {
         $self->header_type( 'none' );
         print $self->query->header( $self->header_props() );
     }
 
-    # This reads in the file in $byte size chunks
-    # File::MMagic may have read some of the file, so seek back to the beginning
     my $output = "";
-    seek($fh,0,0);
     while ( read( $fh, my $buffer, $bytes ) ) {
         if ( $ENV{'CGI_APP_RETURN_ONLY'} ) {
             $output .= $buffer;
@@ -151,7 +164,7 @@ or a filehandle and the second, an optional number of bytes to determine
 the chunk size of the stream. It defaults to 1024.
 
 It will either stream a file to the user or return false if it fails, perhaps
-because it couldn't find the file you referenced. 
+because it couldn't find the file you referenced.
 
 We highly recommend you provide a file name if passing along a filehandle, as we
 won't be able to deduce the file name, and will use 'FILE' by default. Example:
@@ -160,9 +173,9 @@ won't be able to deduce the file name, and will use 'FILE' by default. Example:
 
 With both a file handle or file name, we will try to determine the correct
 content type by using File::MMagic. A default of 'application/octet-stream'
-will be used if File::MMagic can't figure it out. 
+will be used if File::MMagic can't figure it out.
 
-The size will be calculated and added to the headers as well. 
+The size will be calculated and added to the headers as well.
 
 Again, you can set these explicitly if you want as well:
 
