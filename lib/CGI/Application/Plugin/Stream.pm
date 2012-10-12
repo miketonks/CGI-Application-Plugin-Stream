@@ -82,18 +82,17 @@ sub stream_file {
     # File::MMagic may have read some of the file, so seek back to the beginning
     seek($fh,0,0);
 
-	if ($self->{__IS_PSGI}) {
-
-	    $self->psgi_streaming_callback(sub {
-	       my $writer = shift;
-           while ( read( $fh, my $buffer, $bytes ) ) {
-	           sleep 1 if $TEST_GO_SLOW;
-			   warn "callback loop [$bytes]" if $TEST_DEBUG;
-	           $writer->write($buffer);
-			}
-		});
-		return undef;
-	}
+    if ($self->{__IS_PSGI}) {
+        $self->psgi_streaming_callback(sub {
+            my $writer = shift;
+            while ( read( $fh, my $buffer, $bytes ) ) {
+                sleep 1 if $TEST_GO_SLOW;
+                warn "callback loop [$bytes]" if $TEST_DEBUG;
+                $writer->write($buffer);
+            }
+        });
+        return undef;
+    }
 
     unless ( $ENV{'CGI_APP_RETURN_ONLY'} ) {
         $self->header_type( 'none' );
