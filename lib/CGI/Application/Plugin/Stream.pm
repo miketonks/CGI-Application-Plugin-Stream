@@ -14,8 +14,8 @@ use vars (qw/@ISA @EXPORT_OK/);
 
 our $VERSION = '2.10';
 
-my $TEST_DEBUG = 1;
-my $TEST_GO_SLOW = 1;
+my $TEST_DEBUG = 0;
+my $TEST_GO_SLOW = 0;
 
 sub stream_file {
     my ( $self, $file_or_fh, $bytes ) = @_;
