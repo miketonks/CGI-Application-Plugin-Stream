@@ -82,7 +82,8 @@ sub stream_file {
     # File::MMagic may have read some of the file, so seek back to the beginning
     seek($fh,0,0);
 
-    if ($self->{__IS_PSGI}) {
+	# use streaming callback only in psgi mode, and if the server supports psgi.streaming
+    if ($self->{__IS_PSGI} && $self->query->env->{'psgi.streaming'}) {
         $self->psgi_streaming_callback(sub {
             my $writer = shift;
             while ( read( $fh, my $buffer, $bytes ) ) {
@@ -90,7 +91,9 @@ sub stream_file {
                 warn "callback loop [$bytes]" if $TEST_DEBUG;
                 $writer->write($buffer);
             }
+            $writer->close;
         });
+        close ( $fh );
         return undef;
     }
 
