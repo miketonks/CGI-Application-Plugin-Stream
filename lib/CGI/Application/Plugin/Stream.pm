@@ -92,8 +92,8 @@ sub stream_file {
                 $writer->write($buffer);
             }
             $writer->close;
+            close ( $fh );
         });
-        close ( $fh );
         return undef;
     }
 
